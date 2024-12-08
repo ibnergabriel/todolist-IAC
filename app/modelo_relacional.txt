@@ -1,0 +1,27 @@
+Entidades e Atributos
+1 Usuário
+ID_Usuário (PK)
+Username
+Nome
+Email
+Senha
+
+2 Tarefa
+ID_Tarefa (PK)
+Título
+Descrição
+Data_Limite
+Hora_Limite
+Recorrência (ex.: "Diária", "Semanal", "Mensal")
+Status (ex.: "Pendente", "Concluída", "Atrasada")
+Prioridade
+ID_Usuário (FK)
+
+
+3 Notificação
+ID_Notificação (PK)
+Conteúdo
+Data_Horário
+ID_Tarefa (FK)
+
+
