@@ -1,36 +1,44 @@
-from app.database import db
+import sqlite3
+from datetime import datetime
 
-# Modelo de Usuário
-class Usuario(db.Model):
-    __tablename__ = 'usuarios'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    senha = db.Column(db.String(200), nullable=False)
+DB_PATH = 'app/database/db.sqlite3'
 
-    tarefas = db.relationship('Tarefa', backref='usuario', lazy=True)
+def conectar():
+    return sqlite3.connect(DB_PATH)
 
-# Modelo de Tarefa
-class Tarefa(db.Model):
-    __tablename__ = 'tarefas'
-    id = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(100), nullable=False)
-    descricao = db.Column(db.Text)
-    data_limite = db.Column(db.Date)
-    hora_limite = db.Column(db.Time)
-    recorrencia = db.Column(db.String(50))  # Ex: Diária, Semanal, Mensal
-    status = db.Column(db.String(20), default='Pendente')
-    prioridade = db.Column(db.String(30), nullable=False)
+def init_db():
+    conn = conectar()
+    c = conn.cursor()
 
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    notificacoes = db.relationship('Notificacao', backref='tarefa', lazy=True)
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS Usuario (
+        ID_Usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+        Username TEXT NOT NULL UNIQUE,
+        Nome TEXT NOT NULL,
+        Email TEXT NOT NULL UNIQUE,
+        Senha TEXT NOT NULL
+    )
+    ''')
 
-# Modelo de Notificação
-class Notificacao(db.Model):
-    __tablename__ = 'notificacoes'
-    id = db.Column(db.Integer, primary_key=True)
-    conteudo = db.Column(db.Text, nullable=False)
-    data_horario = db.Column(db.DateTime, nullable=False)
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS Tarefa (
+        ID_Tarefa INTEGER PRIMARY KEY AUTOINCREMENT,
+        Titulo TEXT NOT NULL,
+        Descricao TEXT,
+        Data_Limite DATE,
+        Data_Conclusao DATE,
+        Status TEXT CHECK(Status IN ('Pendente', 'Concluída', 'Atrasada')) DEFAULT 'Pendente',
+        Prioridade INTEGER CHECK(Prioridade IN (1, 2, 3)), -- 1: Alta, 2: Média, 3: Baixa
+        ID_Usuario INTEGER NOT NULL,
+        FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario) ON DELETE CASCADE
+    )
+    ''')
 
-    tarefa_id = db.Column(db.Integer, db.ForeignKey('tarefas.id'), nullable=False)
+    conn.commit()
+    conn.close()
+
+# Função para verificar se a tarefa está atrasada
+def verificar_atraso(data_limite):
+    if data_limite and datetime.strptime(data_limite, '%Y-%m-%d').date() < datetime.now().date():
+        return "Atrasada"
+    return "Pendente"

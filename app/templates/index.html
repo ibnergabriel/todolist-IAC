@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo Avançado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <script src="{{ url_for('static', filename='js/scripts.js') }}" defer></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Bloco de Cadastro -->
+        <div class="cadastro-container">
+            <header>
+                <h1>ToDo List</h1>
+                <p>Bem-vindo, {{ session['username'] }}! <a href="{{ url_for('logout') }}">Sair</a></p>
+            </header>
+
+            <form id="todo-form" action="{{ url_for('criar_tarefa') }}" method="POST">
+                <p>Adicione sua tarefa</p>
+                <div class="form-control">
+                    <input type="text" id="todo-input" name="titulo" placeholder="Título da tarefa" required />
+                    <textarea name="descricao" placeholder="Descrição (opcional)"></textarea>
+                    <input type="date" name="data_limite" placeholder="Data Limite" />
+                    <select name="prioridade">
+                        <option value="1">Alta</option>
+                        <option value="2">Média</option>
+                        <option value="3" selected>Baixa</option>
+                    </select>
+                    <button type="submit">
+                        <i class="fa-thin fa-plus"></i> Adicionar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bloco de Tarefas Cadastradas -->
+        <div class="tarefas-container">
+            <h2>Tarefas Cadastradas</h2>
+
+            <!-- Filtro por Status -->
+            <div class="filtro-container">
+                <label for="filtro-status">Filtrar por Status:</label>
+                <select id="filtro-status">
+                    <option value="Todas">Todas</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Concluída">Concluída</option>
+                    <option value="Atrasada">Atrasada</option>
+                </select>
+            </div>
+
+            <div id="todo-list">
+                {% for tarefa in tarefas %}
+                <div class="todo {% if tarefa[4] == 'Concluída' %}done{% elif tarefa[4] == 'Atrasada' %}atrasada{% elif tarefa[4] == 'Pendente' %}pendente{% endif %}" data-status="{{ tarefa[4] }}">
+                        <div class="todo-info">
+                            <h3>{{ tarefa[1] }}</h3> <!-- Título -->
+                            <p>{{ tarefa[2] }}</p> <!-- Descrição -->
+                            <div class="todo-details">
+                                <p><strong>Data Limite:</strong> {{ tarefa[3] }}</p>
+                                <p><strong>Data de Conclusão:</strong> {{ tarefa[5] if tarefa[5] else "Não concluída" }}</p>
+                                <p><strong>Prioridade:</strong> 
+                                    {% if tarefa[6] == 1 %}
+                                        Alta
+                                    {% elif tarefa[6] == 2 %}
+                                        Média
+                                    {% else %}
+                                        Baixa
+                                    {% endif %}
+                                </p>
+                                <p><strong>Status:</strong> {{ tarefa[4] }}</p>
+                            </div>
+                        </div>
+                        <div class="todo-actions">
+                            <!-- Botão para marcar como concluída -->
+                            <form action="{{ url_for('atualizar_status', id_tarefa=tarefa[0]) }}" method="POST" class="finish-todo">
+                                <input type="hidden" name="status" value="Concluída" />
+                                <button type="submit">
+                                    <i class="fa-solid fa-check"></i> Concluir
+                                </button>
+                            </form>
+
+                            <!-- Botão para excluir tarefa -->
+                            <form action="{{ url_for('excluir_tarefa', id_tarefa=tarefa[0]) }}" method="POST" class="remove-todo">
+                                <button type="submit">
+                                    <i class="fa-solid fa-xmark"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filtro por Status
+        document.getElementById('filtro-status').addEventListener('change', function () {
+            const status = this.value;
+            const tarefas = document.querySelectorAll('.todo');
+
+            tarefas.forEach(tarefa => {
+                const tarefaStatus = tarefa.getAttribute('data-status');
+                if (status === 'Todas' || tarefaStatus === status) {
+                    tarefa.style.display = 'flex';
+                } else {
+                    tarefa.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

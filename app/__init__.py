@@ -1,11 +1,11 @@
 from flask import Flask
-from app.config import Config
-from app.database import db
+from .routes import init_routes
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
-
-    db.init_app(app)
-
+    app.secret_key = 'sua_chave_secreta_aqui'
+    
+    # Inicializa as rotas
+    init_routes(app)
+    
     return app
