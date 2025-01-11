@@ -18,6 +18,15 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+            <script>
+                // Script para esconder a mensagem após um tempo
+                setTimeout(function() {
+                    var alert = document.querySelector('.alert');
+                    if (alert) {
+                        alert.style.display = 'none';
+                    }
+                }, 3000);
+            </script>
             <form action="{{ url_for('login') }}" method="POST">
                 <div class="form-group">
                     <label for="username">Usuário</label>
