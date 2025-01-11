@@ -1,15 +1,27 @@
 import sqlite3
 from datetime import datetime
 
+# Caminho para o banco de dados SQLite
 DB_PATH = 'app/database/db.sqlite3'
 
+# Função para conectar ao banco de dados
 def conectar():
+    """
+    Cria uma conexão com o banco de dados SQLite.
+    Retorna um objeto de conexão.
+    """
     return sqlite3.connect(DB_PATH)
 
+# Função para inicializar o banco de dados
 def init_db():
+    """
+    Inicializa o banco de dados, criando as tabelas 'Usuario' e 'Tarefa' 
+    se elas não existirem.
+    """
     conn = conectar()
     c = conn.cursor()
 
+    # Criação da tabela Usuario
     c.execute('''
     CREATE TABLE IF NOT EXISTS Usuario (
         ID_Usuario INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +32,7 @@ def init_db():
     )
     ''')
 
+    # Criação da tabela Tarefa
     c.execute('''
     CREATE TABLE IF NOT EXISTS Tarefa (
         ID_Tarefa INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,11 +47,16 @@ def init_db():
     )
     ''')
 
+    # Confirma as alterações no banco de dados
     conn.commit()
     conn.close()
 
 # Função para verificar se a tarefa está atrasada
 def verificar_atraso(data_limite):
+    """
+    Verifica se a data limite da tarefa é anterior à data atual.
+    Retorna 'Atrasada' se a data limite for anterior, caso contrário, retorna 'Pendente'.
+    """
     if data_limite and datetime.strptime(data_limite, '%Y-%m-%d').date() < datetime.now().date():
         return "Atrasada"
     return "Pendente"

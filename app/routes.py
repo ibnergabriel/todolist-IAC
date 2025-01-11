@@ -1,68 +1,58 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import conectar, init_db, verificar_atraso
+from .models import Usuario, Tarefa, Notificacao, db
 from datetime import datetime
 
-def init_routes(app):
-    @app.route('/')
-    def index():
-        if 'usuario_id' in session:
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        senha = request.form['senha']
+
+        # Busca o usuário pelo username
+        usuario = Usuario.query.filter_by(username=username).first()
+
+        # Verifica se o usuário existe e se a senha está correta
+        if usuario and usuario.check_password(senha):
+            session['usuario_id'] = usuario.id
+            session['username'] = usuario.username
+            flash('Login realizado com sucesso!', 'success')
             return redirect(url_for('tarefas'))
-        return render_template('login.html')
+        else:
+            flash('Usuário ou senha incorretos.', 'error')
 
-    @app.route('/login', methods=['GET', 'POST'])
-    def login():
-        if request.method == 'POST':
-            username = request.form['username']
-            senha = request.form['senha']
+    return render_template('login.html')
 
-            conn = conectar()
-            c = conn.cursor()
-            c.execute('SELECT * FROM Usuario WHERE Username = ?', (username,))
-            usuario = c.fetchone()
-            conn.close()
 
-            if usuario and check_password_hash(usuario[4], senha):
-                session['usuario_id'] = usuario[0]
-                session['username'] = usuario[1]
-                flash('Login realizado com sucesso!', 'success')
-                return redirect(url_for('tarefas'))
-            else:
-                flash('Usuário ou senha incorretos.', 'error')
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        username = request.form['username']
+        nome = request.form['nome']
+        email = request.form['email']
+        senha = request.form['senha']
+        confirmar_senha = request.form['confirmar_senha']
 
-        return render_template('login.html')
+        # Verificar se as senhas coincidem
+        if senha != confirmar_senha:
+            flash('As senhas não coincidem. Por favor, tente novamente.', 'error')
+            return redirect(url_for('registro'))
 
-    @app.route('/registro', methods=['GET', 'POST'])
-    def registro():
-        if request.method == 'POST':
-            username = request.form['username']
-            nome = request.form['nome']
-            email = request.form['email']
-            senha = request.form['senha']
-            confirmar_senha = request.form['confirmar_senha']
+        # Criar novo usuário e definir a senha com hash
+        novo_usuario = Usuario(username=username, nome=nome, email=email)
+        novo_usuario.set_password(senha)  # Define o hash da senha
 
-            if senha != confirmar_senha:
-                flash('As senhas não coincidem. Por favor, tente novamente.', 'error')
-                return redirect(url_for('registro'))
+        try:
+            db.session.add(novo_usuario)  # Adiciona o usuário ao banco de dados
+            db.session.commit()
+            flash('Registro realizado com sucesso! Faça login.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()  # Reverte alterações no banco em caso de erro
+            flash('Erro ao registrar. Usuário ou e-mail já existente.', 'error')
 
-            senha_hash = generate_password_hash(senha)
+    return render_template('registro.html')
 
-            conn = conectar()
-            c = conn.cursor()
-            try:
-                c.execute('''
-                INSERT INTO Usuario (Username, Nome, Email, Senha)
-                VALUES (?, ?, ?, ?)
-                ''', (username, nome, email, senha_hash))
-                conn.commit()
-                flash('Registro realizado com sucesso! Faça login.', 'success')
-                return redirect(url_for('login'))
-            except sqlite3.IntegrityError as e:
-                flash('Erro ao registrar. Usuário ou e-mail já existente.', 'error')
-            finally:
-                conn.close()
-
-        return render_template('registro.html')
 
     @app.route('/logout')
     def logout():
@@ -77,15 +67,8 @@ def init_routes(app):
             flash('Você precisa fazer login para acessar esta página.', 'error')
             return redirect(url_for('login'))
 
-        conn = conectar()
-        c = conn.cursor()
-        c.execute('''
-        SELECT ID_Tarefa, Titulo, Descricao, Data_Limite, Status, Data_Conclusao, Prioridade
-        FROM Tarefa
-        WHERE ID_Usuario = ?
-        ''', (session['usuario_id'],))
-        tarefas = c.fetchall()
-        conn.close()
+        usuario_id = session['usuario_id']
+        tarefas = Tarefa.query.filter_by(usuario_id=usuario_id).all()
 
         return render_template('index.html', tarefas=tarefas)
 
@@ -98,24 +81,19 @@ def init_routes(app):
         titulo = request.form['titulo']
         descricao = request.form.get('descricao', '')
         data_limite = request.form.get('data_limite', None)
-        status = verificar_atraso(data_limite)
-        prioridade = int(request.form.get('prioridade', 3))
-        id_usuario = session['usuario_id']
+        prioridade = request.form.get('prioridade', 'BAIXA').upper()
 
-        conn = conectar()
-        c = conn.cursor()
-        try:
-            c.execute('''
-            INSERT INTO Tarefa (Titulo, Descricao, Data_Limite, Status, Prioridade, ID_Usuario)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (titulo, descricao, data_limite, status, prioridade, id_usuario))
-            conn.commit()
-            flash('Tarefa criada com sucesso!', 'success')
-        except sqlite3.IntegrityError as e:
-            flash('Erro ao criar tarefa.', 'error')
-        finally:
-            conn.close()
+        nova_tarefa = Tarefa(
+            titulo=titulo,
+            descricao=descricao,
+            data_hora_limite=data_limite,
+            prioridade=prioridade,
+            usuario_id=session['usuario_id'],
+        )
 
+        db.session.add(nova_tarefa)
+        db.session.commit()
+        flash('Tarefa criada com sucesso!', 'success')
         return redirect(url_for('tarefas'))
 
     @app.route('/tarefa/<int:id_tarefa>/status', methods=['POST'])
@@ -124,16 +102,18 @@ def init_routes(app):
             flash('Você precisa fazer login para acessar esta página.', 'error')
             return redirect(url_for('login'))
 
+        tarefa = Tarefa.query.filter_by(id=id_tarefa, usuario_id=session['usuario_id']).first()
+
+        if not tarefa:
+            flash('Tarefa não encontrada.', 'error')
+            return redirect(url_for('tarefas'))
+
         novo_status = request.form['status']
-        conn = conectar()
-        c = conn.cursor()
-        c.execute('''
-        UPDATE Tarefa
-        SET Status = ?, Data_Conclusao = ?
-        WHERE ID_Tarefa = ? AND ID_Usuario = ?
-        ''', (novo_status, datetime.now().strftime('%Y-%m-%d'), id_tarefa, session['usuario_id']))
-        conn.commit()
-        conn.close()
+        tarefa.status = novo_status
+        if novo_status == 'CONCLUIDA':
+            tarefa.data_hora_conclusao = datetime.now()
+
+        db.session.commit()
         flash('Status da tarefa atualizado com sucesso!', 'success')
         return redirect(url_for('tarefas'))
 
@@ -143,10 +123,13 @@ def init_routes(app):
             flash('Você precisa fazer login para acessar esta página.', 'error')
             return redirect(url_for('login'))
 
-        conn = conectar()
-        c = conn.cursor()
-        c.execute('DELETE FROM Tarefa WHERE ID_Tarefa = ? AND ID_Usuario = ?', (id_tarefa, session['usuario_id']))
-        conn.commit()
-        conn.close()
+        tarefa = Tarefa.query.filter_by(id=id_tarefa, usuario_id=session['usuario_id']).first()
+
+        if not tarefa:
+            flash('Tarefa não encontrada.', 'error')
+            return redirect(url_for('tarefas'))
+
+        db.session.delete(tarefa)
+        db.session.commit()
         flash('Tarefa excluída com sucesso!', 'success')
         return redirect(url_for('tarefas'))
