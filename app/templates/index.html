@@ -72,6 +72,11 @@
                         </div>
                     </div>
                     <div class="todo-actions">
+                        <!-- Botão para editar tarefa -->
+                        <button onclick="editarTarefa('{{ tarefa[0] }}')">
+                            <i class="fa-solid fa-edit"></i> Editar
+                        </button>
+
                         {% if tarefa[4] != 'Concluída' %}
                             <!-- Botão para marcar como concluída -->
                             <form action="{{ url_for('atualizar_status', id_tarefa=tarefa[0]) }}" method="POST" class="finish-todo" onsubmit="hideButton(this)">
@@ -89,20 +94,40 @@
                             </button>
                         </form>
                     </div>
+
+                    <!-- Formulário de Edição (inicialmente oculto) -->
+                    <div id="editar-form-{{ tarefa[0] }}" class="editar-form" style="display: none;">
+                        <form id="editar-tarefa-form-{{ tarefa[0] }}" onsubmit="salvarEdicao(event, '{{ tarefa[0] }}')">
+                            <h3>Editar Tarefa</h3>
+                            <div class="form-control">
+                                <input type="text" name="titulo" value="{{ tarefa[1] }}" placeholder="Título da tarefa" required />
+                                <textarea name="descricao" placeholder="Descrição (opcional)">{{ tarefa[2] }}</textarea>
+                                <input type="date" name="data_limite" value="{{ tarefa[3] }}" />
+                                <select name="prioridade">
+                                    <option value="1" {% if tarefa[6] == 1 %}selected{% endif %}>Alta</option>
+                                    <option value="2" {% if tarefa[6] == 2 %}selected{% endif %}>Média</option>
+                                    <option value="3" {% if tarefa[6] == 3 %}selected{% endif %}>Baixa</option>
+                                </select>
+                                <div class="form-buttons">
+                                    <button type="submit" class="btn-primary">Salvar</button>
+                                    <button type="button" onclick="cancelarEdicao('{{ tarefa[0] }}')" class="btn-secondary">Cancelar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
-            
-            <script>
-                // Função para esconder o botão após o clique
-                function hideButton(form) {
-                    var button = form.querySelector('button');
-                    button.style.display = 'none';
-                }
-            </script>
-            
+        </div>
+    </div>
 
     <script>
+        // Função para esconder o botão após o clique
+        function hideButton(form) {
+            var button = form.querySelector('button');
+            button.style.display = 'none';
+        }
+
         // Filtro por Status
         document.getElementById('filtro-status').addEventListener('change', function () {
             const status = this.value;
@@ -117,6 +142,59 @@
                 }
             });
         });
+
+        // Função para exibir o formulário de edição com animação
+        function editarTarefa(id) {
+            const form = document.getElementById(`editar-form-${id}`);
+            form.style.display = 'block';
+            form.style.opacity = '0';
+            form.style.transition = 'opacity 0.3s ease';
+
+            setTimeout(() => {
+                form.style.opacity = '1';
+            }, 10);
+        }
+
+        // Função para salvar a edição da tarefa
+        async function salvarEdicao(event, id) {
+            event.preventDefault();
+            const form = event.target;
+            const titulo = form.querySelector('input[name="titulo"]').value;
+
+            if (!titulo.trim()) {
+                alert('O título da tarefa é obrigatório.');
+                return;
+            }
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Salvando...';
+
+            const formData = new FormData(form);
+            const response = await fetch(`/tarefa/${id}/editar`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Salvar';
+                alert('Erro ao salvar a tarefa. Tente novamente.');
+            }
+        }
+
+        // Função para cancelar a edição
+        function cancelarEdicao(id) {
+            const form = document.getElementById(`editar-form-${id}`);
+            form.style.opacity = '0';
+            form.style.transition = 'opacity 0.3s ease';
+
+            setTimeout(() => {
+                form.style.display = 'none';
+            }, 300);
+        }
     </script>
 </body>
 </html>

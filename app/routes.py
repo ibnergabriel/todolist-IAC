@@ -150,3 +150,31 @@ def init_routes(app):
         conn.close()
         flash('Tarefa excluída com sucesso!', 'success')
         return redirect(url_for('tarefas'))
+#  rota para lidar com a edição de tarefas.
+    @app.route('/tarefa/<int:id_tarefa>/editar', methods=['POST'])
+    def editar_tarefa(id_tarefa):
+        if 'usuario_id' not in session:
+            flash('Você precisa fazer login para acessar esta página.', 'error')
+            return redirect(url_for('login'))
+
+        titulo = request.form['titulo']
+        descricao = request.form.get('descricao', '')
+        data_limite = request.form.get('data_limite', None)
+        prioridade = int(request.form.get('prioridade', 3))
+
+        conn = conectar()
+        c = conn.cursor()
+        try:
+            c.execute('''
+            UPDATE Tarefa
+            SET Titulo = ?, Descricao = ?, Data_Limite = ?, Prioridade = ?
+            WHERE ID_Tarefa = ? AND ID_Usuario = ?
+            ''', (titulo, descricao, data_limite, prioridade, id_tarefa, session['usuario_id']))
+            conn.commit()
+            flash('Tarefa atualizada com sucesso!', 'success')
+        except sqlite3.IntegrityError as e:
+            flash('Erro ao atualizar tarefa.', 'error')
+        finally:
+            conn.close()
+
+        return redirect(url_for('tarefas')) 

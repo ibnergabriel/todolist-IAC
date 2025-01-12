@@ -47,5 +47,58 @@ document.querySelectorAll('.remove-todo').forEach(form => {
     });
 });
 
+// Função para exibir o formulário de edição com animação
+function editarTarefa(id) {
+    const form = document.getElementById(`editar-form-${id}`);
+    form.style.display = 'block';
+    form.style.opacity = '0';
+    form.style.transition = 'opacity 0.3s ease';
+
+    setTimeout(() => {
+        form.style.opacity = '1';
+    }, 10);
+}
+
+// Função para salvar a edição da tarefa
+async function salvarEdicao(event, id) {
+    event.preventDefault();
+    const form = event.target;
+    const titulo = form.querySelector('input[name="titulo"]').value;
+
+    if (!titulo.trim()) {
+        alert('O título da tarefa é obrigatório.');
+        return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Salvando...';
+
+    const formData = new FormData(form);
+    const response = await fetch(`/tarefa/${id}/editar`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.ok) {
+        window.location.reload();
+    } else {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Salvar';
+        alert('Erro ao salvar a tarefa. Tente novamente.');
+    }
+}
+
+// Função para ocultar o formulário de edição com animação
+function cancelarEdicao(id) {
+    const form = document.getElementById(`editar-form-${id}`);
+    form.style.opacity = '0';
+    form.style.transition = 'opacity 0.3s ease';
+
+    setTimeout(() => {
+        form.style.display = 'none';
+    }, 300);
+}
+
 // Carregar tarefas ao iniciar
 loadTodos();
