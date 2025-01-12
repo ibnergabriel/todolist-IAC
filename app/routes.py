@@ -77,13 +77,33 @@ def init_routes(app):
             flash('Você precisa fazer login para acessar esta página.', 'error')
             return redirect(url_for('login'))
 
+        # Obter filtros da URL
+        filtro_status = request.args.get('filtro_status', 'Todas')
+        filtro_prioridade = request.args.get('filtro_prioridade', 'Todas')
+
         conn = conectar()
         c = conn.cursor()
-        c.execute('''
+
+        # Construir a query base
+        query = '''
         SELECT ID_Tarefa, Titulo, Descricao, Data_Limite, Status, Data_Conclusao, Prioridade
         FROM Tarefa
         WHERE ID_Usuario = ?
-        ''', (session['usuario_id'],))
+        '''
+        params = [session['usuario_id']]
+
+        # Adicionar filtro de status, se aplicável
+        if filtro_status != 'Todas':
+            query += ' AND Status = ?'
+            params.append(filtro_status)
+
+        # Adicionar filtro de prioridade, se aplicável
+        if filtro_prioridade != 'Todas':
+            query += ' AND Prioridade = ?'
+            params.append(int(filtro_prioridade))
+
+        # Executar a query com os filtros
+        c.execute(query, tuple(params))
         tarefas = c.fetchall()
         conn.close()
 
@@ -150,7 +170,7 @@ def init_routes(app):
         conn.close()
         flash('Tarefa excluída com sucesso!', 'success')
         return redirect(url_for('tarefas'))
-#  rota para lidar com a edição de tarefas.
+
     @app.route('/tarefa/<int:id_tarefa>/editar', methods=['POST'])
     def editar_tarefa(id_tarefa):
         if 'usuario_id' not in session:
@@ -177,4 +197,4 @@ def init_routes(app):
         finally:
             conn.close()
 
-        return redirect(url_for('tarefas')) 
+        return redirect(url_for('tarefas'))

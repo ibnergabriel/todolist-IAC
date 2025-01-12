@@ -615,3 +615,21 @@ header {
 .editar-form .btn-secondary:hover {
     background-color: #5a6268;
 }
+.filtro-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.filtro-container label {
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.filtro-container select {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+}
