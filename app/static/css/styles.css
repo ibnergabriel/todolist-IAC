@@ -633,3 +633,17 @@ header {
     border-radius: 5px;
     font-size: 1rem;
 }
+
+
+/* Estilo para o efeito de "fantasma" ao arrastar */
+.ghost {
+    opacity: 0.5;
+    background-color: #f0f0f0;
+}
+
+/* Estilo para o elemento que está sendo arrastado */
+.sortable-drag {
+    opacity: 0.8;
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}

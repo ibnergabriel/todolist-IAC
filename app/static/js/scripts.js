@@ -189,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filtro-status').value = urlParams.get('filtro_status') || 'Todas';
     document.getElementById('filtro-prioridade').value = urlParams.get('filtro_prioridade') || 'Todas';
 
-
     // Carregar as tarefas com os filtros atuais
     loadTodos();
 });

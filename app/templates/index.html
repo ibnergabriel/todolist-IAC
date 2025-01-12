@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ToDo List</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}" defer></script>
 </head>
 <body>
@@ -60,7 +61,7 @@
 
             <div id="todo-list">
                 {% for tarefa in tarefas %}
-                <div class="todo {% if tarefa[4] == 'Concluída' %}done{% elif tarefa[4] == 'Atrasada' %}atrasada{% elif tarefa[4] == 'Pendente' %}pendente{% endif %}" data-status="{{ tarefa[4] }}">
+                <div class="todo {% if tarefa[4] == 'Concluída' %}done{% elif tarefa[4] == 'Atrasada' %}atrasada{% elif tarefa[4] == 'Pendente' %}pendente{% endif %}" data-id="{{ tarefa[0] }}" data-status="{{ tarefa[4] }}">
                     <div class="todo-info">
                         <h3>{{ tarefa[1] }}</h3> <!-- Título -->
                         <p>{{ tarefa[2] }}</p> <!-- Descrição -->
@@ -202,6 +203,44 @@
             setTimeout(() => {
                 form.style.display = 'none';
             }, 300);
+        }
+                // Inicializar o SortableJS para Drag and Drop
+                document.addEventListener('DOMContentLoaded', function () {
+            const todoList = document.getElementById('todo-list');
+            Sortable.create(todoList, {
+                animation: 150, // Duração da animação ao arrastar
+                ghostClass: 'ghost', // Classe CSS para o efeito de "fantasma" ao arrastar
+                onEnd: function (evt) {
+                    // Função chamada quando o usuário solta uma tarefa
+                    atualizarOrdemTarefas();
+                }
+            });
+        });
+
+        // Função para atualizar a ordem das tarefas no backend
+        function atualizarOrdemTarefas() {
+            const tarefas = Array.from(document.querySelectorAll('.todo')).map(tarefa => {
+                return tarefa.getAttribute('data-id'); // Obtém o ID de cada tarefa
+            });
+
+            fetch('/tarefa/reordenar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ordem: tarefas }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Ordem das tarefas atualizada com sucesso!');
+                } else {
+                    console.error('Erro ao atualizar a ordem das tarefas:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao enviar a nova ordem:', error);
+            });
         }
     </script>
 </body>

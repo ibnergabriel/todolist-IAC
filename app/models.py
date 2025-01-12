@@ -29,6 +29,7 @@ def init_db():
         Data_Conclusao DATE,
         Status TEXT CHECK(Status IN ('Pendente', 'Concluída', 'Atrasada')) DEFAULT 'Pendente',
         Prioridade INTEGER CHECK(Prioridade IN (1, 2, 3)), -- 1: Alta, 2: Média, 3: Baixa
+        Ordem INTEGER, -- Nova coluna para ordenação
         ID_Usuario INTEGER NOT NULL,
         FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario) ON DELETE CASCADE
     )

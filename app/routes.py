@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify  
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import conectar, init_db, verificar_atraso
 from datetime import datetime
@@ -198,3 +198,25 @@ def init_routes(app):
             conn.close()
 
         return redirect(url_for('tarefas'))
+    @app.route('/tarefa/reordenar', methods=['POST'])
+    def reordenar_tarefas():
+        if 'usuario_id' not in session:
+            return jsonify({'error': 'Não autorizado'}), 401
+
+        nova_ordem = request.json.get('ordem')  # Recebe a nova ordem das tarefas
+        conn = conectar()
+        c = conn.cursor()
+
+        try:
+            for index, id_tarefa in enumerate(nova_ordem):
+                c.execute('''
+                UPDATE Tarefa
+                SET Ordem = ?
+                WHERE ID_Tarefa = ? AND ID_Usuario = ?
+                ''', (index + 1, id_tarefa, session['usuario_id']))
+            conn.commit()
+            return jsonify({'success': True}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            conn.close()
