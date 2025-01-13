@@ -192,3 +192,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar as tarefas com os filtros atuais
     loadTodos();
 });
+
+//  Ocultar o botão "Editar" quando o formulário de edição estiver aberto
+document.addEventListener('DOMContentLoaded', () => {
+    const editButton = document.querySelector('.btn-editar');
+    const editForm = document.querySelector('.editar-form');
+    const saveButton = editForm.querySelector('.btn-primary');
+    const cancelButton = editForm.querySelector('.btn-secondary');
+
+    editButton.addEventListener('click', () => {
+        editButton.style.display = 'none';
+        editForm.style.display = 'block';
+    });
+
+    saveButton.addEventListener('click', () => {
+        editButton.style.display = 'inline-block';
+        editForm.style.display = 'none';
+    });
+
+    cancelButton.addEventListener('click', () => {
+        editButton.style.display = 'inline-block';
+        editForm.style.display = 'none';
+    });
+});

@@ -81,27 +81,29 @@
                         </div>
                     </div>
                     <div class="todo-actions">
-                        <!-- Botão para editar tarefa -->
-                        <button onclick="editarTarefa('{{ tarefa[0] }}')">
-                            <i class="fa-solid fa-edit"></i> Editar
-                        </button>
+                        <div class="task-buttons">
+                                <!-- Botão para editar tarefa -->
+                            <button class="btn-editar" onclick="editarTarefa('{{ tarefa[0] }}')">
+                                <i class="fa-solid fa-edit"></i> Editar
+                            </button>
 
-                        {% if tarefa[4] != 'Concluída' %}
-                            <!-- Botão para marcar como concluída -->
-                            <form action="{{ url_for('atualizar_status', id_tarefa=tarefa[0]) }}" method="POST" class="finish-todo" onsubmit="hideButton(this)">
-                                <input type="hidden" name="status" value="Concluída" />
+                            {% if tarefa[4] != 'Concluída' %}
+                                <!-- Botão para marcar como concluída -->
+                                <form action="{{ url_for('atualizar_status', id_tarefa=tarefa[0]) }}" method="POST" class="finish-todo" onsubmit="hideButton(this)">
+                                    <input type="hidden" name="status" value="Concluída" />
+                                    <button type="submit">
+                                        <i class="fa-solid fa-check"></i> Concluir
+                                    </button>
+                                </form>
+                            {% endif %}
+                
+                            <!-- Botão para excluir tarefa -->
+                            <form action="{{ url_for('excluir_tarefa', id_tarefa=tarefa[0]) }}" method="POST" class="remove-todo">
                                 <button type="submit">
-                                    <i class="fa-solid fa-check"></i> Concluir
+                                    <i class="fa-solid fa-xmark"></i> Excluir
                                 </button>
                             </form>
-                        {% endif %}
-            
-                        <!-- Botão para excluir tarefa -->
-                        <form action="{{ url_for('excluir_tarefa', id_tarefa=tarefa[0]) }}" method="POST" class="remove-todo">
-                            <button type="submit">
-                                <i class="fa-solid fa-xmark"></i> Excluir
-                            </button>
-                        </form>
+                        </div>
                     </div>
 
                     <!-- Formulário de Edição (inicialmente oculto) -->
@@ -241,6 +243,34 @@
             .catch(error => {
                 console.error('Erro ao enviar a nova ordem:', error);
             });
+        }
+
+        function editarTarefa(tarefaId) {
+            // Esconde o botão "Editar"
+            const editButton = document.querySelector(`button[onclick="editarTarefa('${tarefaId}')"]`);
+            editButton.style.display = 'none';
+
+            // Mostra o formulário de edição específico da tarefa
+            const editForm = document.getElementById(`editar-form-${tarefaId}`);
+            editForm.style.display = 'block';
+        }
+
+        function cancelarEdicao(tarefaId) {
+            // Mostra o botão "Editar" novamente
+            const editButton = document.querySelector(`button[onclick="editarTarefa('${tarefaId}')"]`);
+            editButton.style.display = 'block';
+
+            // Esconde o formulário de edição
+            const editForm = document.getElementById(`editar-form-${tarefaId}`);
+            editForm.style.display = 'none';
+        }
+
+        function salvarEdicao(event, tarefaId) {
+        event.preventDefault();
+        // Aqui você pode adicionar o código para salvar as alterações da tarefa via AJAX ou outra abordagem
+
+        // Após salvar, exibir o botão "Editar" novamente e ocultar o formulário
+        cancelarEdicao(tarefaId);
         }
     </script>
 </body>
